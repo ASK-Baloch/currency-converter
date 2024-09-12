@@ -1,32 +1,40 @@
 import { useState } from "react";
-import InputBox from './components/InputBox'; // Import InputBox correctly
+import InputBox from './components/InputBox'; 
 import useCurrencyInfo from './hooks/useCurrencyInfo';
-
+import Footer from "./components/Footer";
 function App() {
-    const [amount, setAmount] = useState(0);
-    const [from, setFrom] = useState("usd");
-    const [to, setTo] = useState("inr");
+    const [amount, setAmount] = useState(1); 
+    const [from, setFrom] = useState("USD");
+    const [to, setTo] = useState("PKR");
     const [convertedAmount, setConvertedAmount] = useState(0);
 
-    const currencyInfo = useCurrencyInfo(from);
+    const { data: currencyInfo, loading, error } = useCurrencyInfo(from);
 
-    // Handle the case where currencyInfo is null (data is still being fetched)
-    if (!currencyInfo) {
-        return <div>Loading currency data...</div>;
-    }
+    const options = currencyInfo ? Object.keys(currencyInfo) : [];
 
-    const options = Object.keys(currencyInfo);
-
+    // Handle the currency swap
     const swap = () => {
         setFrom(to);
         setTo(from);
-        setConvertedAmount(amount);
+        setConvertedAmount(amount); // Swap the convertedAmount and amount
         setAmount(convertedAmount);
     };
 
+    // Convert the amount based on the selected "from" and "to" currencies
     const convert = () => {
-        setConvertedAmount(amount * currencyInfo[to]);
+        if (currencyInfo && currencyInfo[to]) {
+            setConvertedAmount(amount * currencyInfo[to]);
+        }
     };
+
+    // Handle loading and error states
+    if (loading) {
+        return <div>Loading currency data...</div>;
+    }
+
+    if (error) {
+        return <div>Error: {error}</div>;
+    }
 
     return (
         <div
@@ -40,19 +48,22 @@ function App() {
                     <form
                         onSubmit={(e) => {
                             e.preventDefault();
-                            convert();
+                            convert(); // Perform conversion on form submit
                         }}
                     >
+                        {/* From Currency InputBox */}
                         <div className="w-full mb-1">
                             <InputBox
                                 label="From"
                                 amount={amount}
-                                currencyOptions={options}
-                                onCurrencyChange={(currency) => setFrom(currency)} // Corrected handler
-                                selectCurrency={from}
-                                onAmountChange={(amount) => setAmount(amount)}
+                                currencyOptions={options} // Options from currencyInfo
+                                onCurrencyChange={(currency) => setFrom(currency)} // Change "from" currency
+                                selectCurrency={from} // Set selected currency for "from"
+                                onAmountChange={(amount) => setAmount(amount)} // Handle amount input
                             />
                         </div>
+
+                        {/* Swap Button */}
                         <div className="relative w-full h-0.5">
                             <button
                                 type="button"
@@ -62,21 +73,26 @@ function App() {
                                 swap
                             </button>
                         </div>
+
+                        {/* To Currency InputBox */}
                         <div className="w-full mt-1 mb-4">
                             <InputBox
                                 label="To"
-                                amount={convertedAmount}
-                                currencyOptions={options}
-                                onCurrencyChange={(currency) => setTo(currency)}
-                                selectCurrency={to} // Corrected selectCurrency to 'to'
-                                amountDisable
+                                amount={convertedAmount} // Show converted amount
+                                currencyOptions={options} // Options from currencyInfo
+                                onCurrencyChange={(currency) => setTo(currency)} // Change "to" currency
+                                selectCurrency={to} // Set selected currency for "to"
+                                amountDisable // Disable amount input for "to"
                             />
                         </div>
+
+                        {/* Convert Button */}
                         <button type="submit" className="w-full bg-blue-600 text-white px-4 py-3 rounded-lg">
                             Convert {from.toUpperCase()} to {to.toUpperCase()}
                         </button>
                     </form>
                 </div>
+                <Footer />
             </div>
         </div>
     );
